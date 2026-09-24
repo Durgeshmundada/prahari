@@ -129,7 +129,7 @@ jobs:
     needs: [backend, postgres, dashboard, compose-model, dependency-audit, monitoring-rules]
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - run: docker build --file deploy/Dockerfile --tag prahari:ci .
       - name: Verify native model dependencies and API imports in the built runtime
         run: docker run --rm --network none --read-only --tmpfs /tmp --entrypoint /opt/venv/bin/python prahari:ci -c "import os, lightgbm, prahari.api; assert os.getuid() == 10001"
