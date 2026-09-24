@@ -1,0 +1,29 @@
+[Unit]
+Description=Start or resume one verified PRAHARI owned-server model campaign
+After=docker.service network-online.target prahari-owned-pilot.service
+Wants=docker.service network-online.target prahari-owned-pilot.service
+StartLimitIntervalSec=3600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=__START_OR_RESUME_WRAPPER__ __STATE_DIR__ __COLLECTOR__ __RUNS_PER_CLASS__ __BASE_SEED__ __DELAY_SCALE_PERCENT__
+Restart=on-failure
+RestartPreventExitStatus=2
+RestartSec=30s
+TimeoutStopSec=45s
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=__STATE_DIR__
+ReadOnlyPaths=__COLLECTOR_RELEASE__
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

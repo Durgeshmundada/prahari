@@ -1,0 +1,12 @@
+[Unit]
+Description=Periodically verify PRAHARI after Docker/WSL restarts
+
+[Timer]
+OnBootSec=20
+OnUnitActiveSec=120
+AccuracySec=5
+Persistent=true
+Unit=prahari-lab-recovery.service
+
+[Install]
+WantedBy=timers.target

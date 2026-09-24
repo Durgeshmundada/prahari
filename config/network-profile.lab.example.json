@@ -1,0 +1,200 @@
+{
+  "schema_version": "network-profile-v1",
+  "profile_id": "lab-demo-v1",
+  "deployment_scope": "controlled_lab",
+  "incident_id": "inc-branch-01-primary",
+  "monitored_entity_id": "tunnel:branch-01-to-dc-primary",
+  "primary_path_id": "path:branch-01-to-dc:primary",
+  "config": {
+    "schema_version": "1.0",
+    "scenario_version": "mvp-gradual-loss-v0",
+    "telemetry_config_version": "lab-config-v1",
+    "sampling_seconds": 5,
+    "window_seconds": 60,
+    "minimum_samples_per_metric": 10,
+    "max_late_by_ms": 2000,
+    "max_future_skew_ms": 2000,
+    "max_inter_sample_gap_seconds": 15,
+    "traffic_demo_ttl_seconds": 120,
+    "horizons_seconds": [
+      30,
+      60,
+      120
+    ],
+    "supported_incident_types": [
+      "normal",
+      "tunnel_degradation"
+    ],
+    "impact_policy": {
+      "version": "provisional-v0",
+      "description": "Bootstrap-only policy; freeze after the first real lab measurement.",
+      "sustained_seconds": 15,
+      "metrics": {
+        "packet_loss_ratio": 0.05,
+        "jitter_ms": 30.0
+      }
+    },
+    "trend_policy": {
+      "model_version": "trend-baseline-v0",
+      "alert_risk_within_120_seconds": 0.65,
+      "metrics": {
+        "packet_loss_ratio": {
+          "weight": 0.6,
+          "impact_threshold": 0.05,
+          "slope_reference_per_second": 0.00025,
+          "unit": "ratio",
+          "minimum_value": 0.0,
+          "maximum_value": 1.0
+        },
+        "jitter_ms": {
+          "weight": 0.4,
+          "impact_threshold": 30.0,
+          "slope_reference_per_second": 0.25,
+          "unit": "ms",
+          "minimum_value": 0.0,
+          "maximum_value": null
+        }
+      }
+    },
+    "observability_metrics": {
+      "interface_tx_bps": {
+        "unit": "bps",
+        "minimum_value": 0.0,
+        "maximum_value": null
+      },
+      "interface_rx_bps": {
+        "unit": "bps",
+        "minimum_value": 0.0,
+        "maximum_value": null
+      },
+      "interface_tx_drop_ratio": {
+        "unit": "ratio",
+        "minimum_value": 0.0,
+        "maximum_value": 1.0
+      },
+      "interface_rx_error_ratio": {
+        "unit": "ratio",
+        "minimum_value": 0.0,
+        "maximum_value": 1.0
+      },
+      "ospf_full_neighbors": {
+        "unit": "count",
+        "minimum_value": 0.0,
+        "maximum_value": 16.0
+      }
+    }
+  },
+  "inventory": {
+    "version": "lab-v1",
+    "sites": [
+      {
+        "id": "site:branch-01",
+        "name": "Branch-01",
+        "city": "Pune"
+      },
+      {
+        "id": "site:dc-01",
+        "name": "DC-01",
+        "city": "Mumbai"
+      }
+    ],
+    "devices": [
+      {
+        "id": "device:branch-01-edge",
+        "name": "Branch-01 edge",
+        "site_id": "site:branch-01",
+        "role": "branch-edge"
+      },
+      {
+        "id": "device:dc-01-edge",
+        "name": "DC-01 edge",
+        "site_id": "site:dc-01",
+        "role": "dc-edge"
+      }
+    ],
+    "interfaces": [
+      {
+        "id": "interface:branch-01-edge:wan-primary",
+        "device_id": "device:branch-01-edge",
+        "site_id": "site:branch-01",
+        "role": "wan-primary",
+        "capacity_mbps": 100.0
+      },
+      {
+        "id": "interface:dc-01-edge:wan-primary",
+        "device_id": "device:dc-01-edge",
+        "site_id": "site:dc-01",
+        "role": "wan-primary",
+        "capacity_mbps": 100.0
+      }
+    ]
+  },
+  "topology": {
+    "version": "lab-v1",
+    "paths": [
+      {
+        "id": "path:branch-01-to-dc:primary",
+        "name": "Branch-01 to DC-01 primary",
+        "path_role": "primary",
+        "site_ids": [
+          "site:branch-01",
+          "site:dc-01"
+        ],
+        "monitored_entity_ids": [
+          "tunnel:branch-01-to-dc-primary"
+        ],
+        "interface_ids": [
+          "interface:branch-01-edge:wan-primary",
+          "interface:dc-01-edge:wan-primary"
+        ],
+        "backup_path_id": "path:branch-01-to-dc:backup",
+        "applications": [
+          "video",
+          "file-upload",
+          "chat"
+        ],
+        "app_probe_entities": {
+          "video": "app:video:branch-01-to-dc",
+          "file-upload": "app:file-upload:branch-01-to-dc",
+          "chat": "app:chat:branch-01-to-dc"
+        }
+      },
+      {
+        "id": "path:branch-01-to-dc:backup",
+        "name": "Branch-01 to DC-01 backup",
+        "path_role": "backup",
+        "site_ids": [
+          "site:branch-01",
+          "site:dc-01"
+        ],
+        "monitored_entity_ids": [
+          "tunnel:branch-01-to-dc-backup"
+        ],
+        "interface_ids": [],
+        "backup_path_id": null,
+        "applications": [
+          "video",
+          "file-upload",
+          "chat"
+        ],
+        "app_probe_entities": {
+          "video": "app:video:branch-01-to-dc",
+          "file-upload": "app:file-upload:branch-01-to-dc",
+          "chat": "app:chat:branch-01-to-dc"
+        }
+      }
+    ]
+  },
+  "playbook": {
+    "id": "backup-path-shift-v1",
+    "title": "Primary-path degradation and controlled backup-path shift",
+    "status": "available_pending_review",
+    "source": "docs/runbooks/backup-path-shift.md",
+    "applicable_incident_types": [
+      "tunnel_degradation"
+    ],
+    "requires_operator_approval": true,
+    "action_adapter": null,
+    "safety_note": "Configuration example only; external profiles run monitoring and evidence workflows. No production device adapter is approved or enabled. Replace all lab identities and policies with independently reviewed target configuration."
+  }
+}

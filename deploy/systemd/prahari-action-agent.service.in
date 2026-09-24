@@ -1,0 +1,20 @@
+[Unit]
+Description=PRAHARI allow-listed lab network action agent
+After=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_ROOT@
+Environment=PRAHARI_ACTION_AGENT_TOKEN_FILE=@PROJECT_ROOT@/network-lab/state/secrets/action-agent-token
+ExecStart=/usr/bin/python3 @PROJECT_ROOT@/network-lab/scripts/action-agent.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+TimeoutStartSec=30
+TimeoutStopSec=15
+
+[Install]
+WantedBy=default.target

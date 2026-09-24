@@ -1,0 +1,55 @@
+groups:
+  - name: prahari-operations
+    rules:
+      - alert: PrahariApiUnreachable
+        expr: up{job="prahari-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: PRAHARI API cannot be scraped
+          description: Check API liveness, monitoring credentials and network reachability.
+      - alert: PrahariStorageUnavailable
+        expr: prahari_database_available{job="prahari-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: PRAHARI durable storage is unavailable
+          description: Unconfirmed action state may be unknown. Preserve evidence and investigate storage.
+      - alert: PrahariPredictionWithheld
+        expr: prahari_prediction_ready{job="prahari-api"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: PRAHARI prediction evidence is unavailable
+          description: Investigate collectors, freshness, model applicability and data quality.
+      - alert: PrahariUnconfirmedAction
+        expr: prahari_unconfirmed_actions{job="prahari-api"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: PRAHARI has an unconfirmed device operation
+          description: Do not retry. Quiesce dispatch and follow independent route reconciliation.
+      - alert: PrahariApiErrors
+        expr: >-
+          sum by (job, instance) (rate(prahari_http_requests_total{job="prahari-api",status=~"5.."}[5m]))
+          / clamp_min(sum by (job, instance) (rate(prahari_http_requests_total{job="prahari-api"}[5m])), 0.000001) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: PRAHARI API failures exceed the example error budget
+          description: Inspect bounded request outcomes and readiness. Review this threshold for the deployment.
+      - alert: PrahariCopilotUnavailable
+        expr: >-
+          sum by (job, instance) (rate(prahari_copilot_briefs_total{job="prahari-api",outcome="unavailable"}[5m]))
+          / clamp_min(sum by (job, instance) (rate(prahari_copilot_briefs_total{job="prahari-api"}[5m])), 0.000001) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: PRAHARI local copilot is unavailable for repeated requests
+          description: Check the local runtime and evidence-selection validation; predictor evidence remains authoritative.

@@ -1,0 +1,14 @@
+[Unit]
+Description=Restore the PRAHARI Containerlab topology after Docker starts
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=@PROJECT_ROOT@
+ExecStart=/usr/bin/bash @PROJECT_ROOT@/network-lab/scripts/recover-lab.sh --confirm RECOVER-PRAHARI-LAB
+TimeoutStartSec=180
+RemainAfterExit=yes
+
+[Install]
+WantedBy=docker.service

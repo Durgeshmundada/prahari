@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "scenario_version": "mvp-gradual-loss-v0",
+  "telemetry_config_version": "lab-config-v1",
+  "sampling_seconds": 5,
+  "window_seconds": 60,
+  "minimum_samples_per_metric": 10,
+  "max_late_by_ms": 2000,
+  "max_future_skew_ms": 2000,
+  "max_inter_sample_gap_seconds": 15,
+  "traffic_demo_ttl_seconds": 120,
+  "horizons_seconds": [30, 60, 120],
+  "supported_incident_types": ["normal", "tunnel_degradation"],
+  "impact_policy": {
+    "version": "provisional-v0",
+    "description": "Bootstrap-only policy; freeze after the first real lab measurement.",
+    "sustained_seconds": 15,
+    "metrics": {
+      "packet_loss_ratio": 0.05,
+      "jitter_ms": 30.0
+    }
+  },
+  "trend_policy": {
+    "model_version": "trend-baseline-v0",
+    "alert_risk_within_120_seconds": 0.65,
+    "metrics": {
+      "packet_loss_ratio": {
+        "weight": 0.6,
+        "impact_threshold": 0.05,
+        "slope_reference_per_second": 0.00025,
+        "unit": "ratio",
+        "minimum_value": 0.0,
+        "maximum_value": 1.0
+      },
+      "jitter_ms": {
+        "weight": 0.4,
+        "impact_threshold": 30.0,
+        "slope_reference_per_second": 0.25,
+        "unit": "ms",
+        "minimum_value": 0.0,
+        "maximum_value": null
+      }
+    }
+  },
+  "observability_metrics": {
+    "interface_tx_bps": {
+      "unit": "bps",
+      "minimum_value": 0.0,
+      "maximum_value": null
+    },
+    "interface_rx_bps": {
+      "unit": "bps",
+      "minimum_value": 0.0,
+      "maximum_value": null
+    },
+    "interface_tx_drop_ratio": {
+      "unit": "ratio",
+      "minimum_value": 0.0,
+      "maximum_value": 1.0
+    },
+    "interface_rx_error_ratio": {
+      "unit": "ratio",
+      "minimum_value": 0.0,
+      "maximum_value": 1.0
+    },
+    "ospf_full_neighbors": {
+      "unit": "count",
+      "minimum_value": 0.0,
+      "maximum_value": 16.0
+    }
+  }
+}

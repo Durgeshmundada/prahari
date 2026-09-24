@@ -1,0 +1,152 @@
+# Validated routed FRR/OSPF lab with a higher-cost backup path, real application
+# probes, durable path telemetry, and an isolated management API.
+name: prahari
+
+mgmt:
+  network: prahari_mgmt
+  ipv4-subnet: 172.31.255.0/24
+  external-access: false
+  driver-opts:
+    com.docker.network.bridge.name: "prahari-mgmt"
+    com.docker.network.bridge.enable_ip_masquerade: "false"
+
+topology:
+  nodes:
+    branch-client:
+      kind: linux
+      image: prahari-lab-app@sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e
+      mgmt-ipv4: 172.31.255.10
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      exec:
+        - ip link set dev eth1 up
+        - ip address replace 172.16.10.2/24 dev eth1
+        - ip route replace default via 172.16.10.1
+      binds:
+        - state/collector:/var/lib/prahari/path-spool
+
+    branch-edge:
+      kind: linux
+      image: quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1
+      mgmt-ipv4: 172.31.255.11
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      binds:
+        - configs/branch-edge/frr.conf:/etc/frr/frr.conf:ro
+        - configs/frr/daemons:/etc/frr/daemons:ro
+        - configs/frr/vtysh.conf:/etc/frr/vtysh.conf:ro
+
+    pe-primary:
+      kind: linux
+      image: quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1
+      mgmt-ipv4: 172.31.255.12
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      binds:
+        - configs/pe-primary/frr.conf:/etc/frr/frr.conf:ro
+        - configs/frr/daemons:/etc/frr/daemons:ro
+        - configs/frr/vtysh.conf:/etc/frr/vtysh.conf:ro
+
+    core:
+      kind: linux
+      image: quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1
+      mgmt-ipv4: 172.31.255.13
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      binds:
+        - configs/core/frr.conf:/etc/frr/frr.conf:ro
+        - configs/frr/daemons:/etc/frr/daemons:ro
+        - configs/frr/vtysh.conf:/etc/frr/vtysh.conf:ro
+
+    pe-secondary:
+      kind: linux
+      image: quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1
+      mgmt-ipv4: 172.31.255.14
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      binds:
+        - configs/pe-secondary/frr.conf:/etc/frr/frr.conf:ro
+        - configs/frr/daemons:/etc/frr/daemons:ro
+        - configs/frr/vtysh.conf:/etc/frr/vtysh.conf:ro
+
+    pe-backup:
+      kind: linux
+      image: quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1
+      mgmt-ipv4: 172.31.255.15
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      binds:
+        - configs/pe-backup/frr.conf:/etc/frr/frr.conf:ro
+        - configs/frr/daemons:/etc/frr/daemons:ro
+        - configs/frr/vtysh.conf:/etc/frr/vtysh.conf:ro
+
+    dc-edge:
+      kind: linux
+      image: quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1
+      mgmt-ipv4: 172.31.255.16
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      binds:
+        - configs/dc-edge/frr.conf:/etc/frr/frr.conf:ro
+        - configs/frr/daemons:/etc/frr/daemons:ro
+        - configs/frr/vtysh.conf:/etc/frr/vtysh.conf:ro
+
+    app-server:
+      kind: linux
+      image: prahari-lab-app@sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e
+      mgmt-ipv4: 172.31.255.17
+      privileged: true
+      sysctls:
+        net.ipv4.ip_forward: "1"
+      exec:
+        - ip link set dev eth1 up
+        - ip address replace 172.16.20.2/24 dev eth1
+        - ip route replace default via 172.16.20.1
+
+    noc-api:
+      kind: linux
+      image: prahari-lab-app@sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e
+      mgmt-ipv4: 172.31.255.18
+      env:
+        PRAHARI_ENVIRONMENT: development
+        PRAHARI_DATA_MODE: live
+        PRAHARI_AUTH_MODE: disabled
+        PRAHARI_DATABASE_URL: sqlite:////app/artifacts/prahari.db
+        PRAHARI_AUTO_CREATE_SCHEMA: "true"
+        PRAHARI_MODEL_ARTIFACT_PATH: /app/models/degradation-lgbm-v1.txt
+        PRAHARI_MODEL_MANIFEST_PATH: /app/models/degradation-lgbm-v1.manifest.json
+        PRAHARI_COPILOT_ENABLED: "true"
+        PRAHARI_OLLAMA_URL: http://172.31.255.19:11434
+        PRAHARI_OLLAMA_ALLOWED_PRIVATE_IP: 172.31.255.19
+        PRAHARI_OLLAMA_MODEL: qwen3:0.6b
+        PRAHARI_ACTION_ADAPTER_ENABLED: "true"
+        PRAHARI_ACTION_AGENT_URL: http://172.31.255.1:8091
+        PRAHARI_ACTION_AGENT_ALLOWED_PRIVATE_IP: 172.31.255.1
+        PRAHARI_ACTION_AGENT_TOKEN_FILE: /run/secrets/action-agent-token
+      cmd: /opt/venv/bin/uvicorn prahari.main:app --app-dir src --host 0.0.0.0 --port 8080
+      binds:
+        - ${PRAHARI_LAB_DATA_DIR}:/app/artifacts
+        - ../artifacts/models:/app/models:ro
+        - state/secrets/action-agent-token:/run/secrets/action-agent-token:ro
+
+  links:
+    # User/data LANs
+    - endpoints: ["branch-client:eth1", "branch-edge:eth3"]
+    - endpoints: ["dc-edge:eth3", "app-server:eth1"]
+
+    # Preferred underlay path: branch-edge -> pe-primary -> core -> pe-secondary -> dc-edge
+    - endpoints: ["branch-edge:eth1", "pe-primary:eth1"]
+    - endpoints: ["pe-primary:eth2", "core:eth1"]
+    - endpoints: ["core:eth2", "pe-secondary:eth1"]
+    - endpoints: ["pe-secondary:eth2", "dc-edge:eth1"]
+
+    # Higher-cost backup underlay path
+    - endpoints: ["branch-edge:eth2", "pe-backup:eth1"]
+    - endpoints: ["pe-backup:eth2", "dc-edge:eth2"]

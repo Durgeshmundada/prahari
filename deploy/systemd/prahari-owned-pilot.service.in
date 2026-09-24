@@ -1,0 +1,14 @@
+[Unit]
+Description=Supervise the isolated PRAHARI owned-server pilot
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash __SUPERVISOR__ __STATE_DIR__
+Restart=always
+RestartSec=15s
+TimeoutStopSec=45s
+
+[Install]
+WantedBy=multi-user.target

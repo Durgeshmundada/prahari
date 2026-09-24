@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>PRAHARI User Link</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <div>
+          <p class="eyebrow">PRAHARI · PRIVATE LAB SERVICE</p>
+          <h1>User Link</h1>
+          <p class="lede">Send a real message and file across this local network while the operator watches service health.</p>
+        </div>
+        <div class="service-state" id="service-state"><span></span> Checking service</div>
+      </header>
+
+      <section class="privacy" aria-label="Privacy statement">
+        <strong>Private by design.</strong> Message text and file bytes are returned or verified in memory, then discarded. Only timings, byte counts, throughput, and a checksum go to PRAHARI.
+      </section>
+
+      <section class="connection card">
+        <div>
+          <p class="section-label">01 · Connect</p>
+          <h2>Laptop access</h2>
+          <p>Enter the access code provided by the operator on Laptop A.</p>
+        </div>
+        <form id="access-form">
+          <label for="access-code">Access code</label>
+          <div class="inline-control">
+            <input id="access-code" type="password" autocomplete="off" required minlength="16" />
+            <button type="submit" class="secondary">Use code</button>
+          </div>
+        </form>
+      </section>
+
+      <div class="grid">
+        <section class="card">
+          <p class="section-label">02 · Test conversation</p>
+          <h2>Chat echo</h2>
+          <div id="messages" class="messages" aria-live="polite">
+            <div class="empty">Your test messages appear here. They are not stored.</div>
+          </div>
+          <form id="chat-form">
+            <label for="message">Message</label>
+            <div class="inline-control">
+              <input id="message" maxlength="4096" placeholder="Type a test message" required disabled />
+              <button id="send-button" type="submit" disabled>Send</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <p class="section-label">03 · Test transfer</p>
+          <h2>File check</h2>
+          <p>Select a file up to <strong id="file-limit">5 MiB</strong>. Its bytes are hashed and discarded.</p>
+          <form id="upload-form">
+            <label class="file-picker" for="file">
+              <span id="file-label">Choose a file</span>
+              <input id="file" type="file" disabled />
+            </label>
+            <button id="upload-button" type="submit" disabled>Run transfer test</button>
+          </form>
+          <dl class="metrics">
+            <div><dt>Chat RTT p95</dt><dd id="latency">—</dd></div>
+            <div><dt>Throughput</dt><dd id="throughput">—</dd></div>
+            <div><dt>Verified bytes</dt><dd id="bytes">—</dd></div>
+            <div><dt>Dashboard evidence</dt><dd id="evidence">—</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <aside id="notice" class="notice" role="status" aria-live="polite">Enter the access code to begin.</aside>
+    </main>
+  </body>
+</html>

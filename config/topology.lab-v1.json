@@ -1,0 +1,38 @@
+{
+  "version": "lab-v1",
+  "paths": [
+    {
+      "id": "path:branch-01-to-dc:primary",
+      "name": "Branch-01 to DC-01 primary",
+      "path_role": "primary",
+      "site_ids": ["site:branch-01", "site:dc-01"],
+      "monitored_entity_ids": ["tunnel:branch-01-to-dc-primary"],
+      "interface_ids": [
+        "interface:branch-01-edge:wan-primary",
+        "interface:dc-01-edge:wan-primary"
+      ],
+      "backup_path_id": "path:branch-01-to-dc:backup",
+      "applications": ["video", "file-upload", "chat"],
+      "app_probe_entities": {
+        "video": "app:video:branch-01-to-dc",
+        "file-upload": "app:file-upload:branch-01-to-dc",
+        "chat": "app:chat:branch-01-to-dc"
+      }
+    },
+    {
+      "id": "path:branch-01-to-dc:backup",
+      "name": "Branch-01 to DC-01 backup",
+      "path_role": "backup",
+      "site_ids": ["site:branch-01", "site:dc-01"],
+      "monitored_entity_ids": ["tunnel:branch-01-to-dc-backup"],
+      "interface_ids": [],
+      "backup_path_id": null,
+      "applications": ["video", "file-upload", "chat"],
+      "app_probe_entities": {
+        "video": "app:video:branch-01-to-dc",
+        "file-upload": "app:file-upload:branch-01-to-dc",
+        "chat": "app:chat:branch-01-to-dc"
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "version": "lab-v1",
+  "sites": [
+    {"id": "site:branch-01", "name": "Branch-01", "city": "Pune"},
+    {"id": "site:dc-01", "name": "DC-01", "city": "Mumbai"}
+  ],
+  "devices": [
+    {
+      "id": "device:branch-01-edge",
+      "name": "Branch-01 edge",
+      "site_id": "site:branch-01",
+      "role": "branch-edge"
+    },
+    {
+      "id": "device:dc-01-edge",
+      "name": "DC-01 edge",
+      "site_id": "site:dc-01",
+      "role": "dc-edge"
+    }
+  ],
+  "interfaces": [
+    {
+      "id": "interface:branch-01-edge:wan-primary",
+      "device_id": "device:branch-01-edge",
+      "site_id": "site:branch-01",
+      "role": "wan-primary",
+      "capacity_mbps": 100
+    },
+    {
+      "id": "interface:dc-01-edge:wan-primary",
+      "device_id": "device:dc-01-edge",
+      "site_id": "site:dc-01",
+      "role": "wan-primary",
+      "capacity_mbps": 100
+    }
+  ]
+}

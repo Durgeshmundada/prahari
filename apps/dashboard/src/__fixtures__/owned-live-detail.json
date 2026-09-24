@@ -1,0 +1,151 @@
+{
+  "incident": {
+    "id": "inc-branch-01-primary",
+    "state": "watch",
+    "severity": "informational",
+    "summary": "Branch-01 to DC-01 primary: heuristic impact score is 26% within 120 seconds.",
+    "prediction": {
+      "prediction_id": "pred-ad2ec6981d0a82cac58f3f13b97f499dc204e30b875e210fa772ba5fb07435a7",
+      "model_version": "trend-baseline-v0",
+      "network_profile_sha256": null,
+      "model_bundle_sha256": null,
+      "entity_id": "tunnel:branch-01-to-dc-primary",
+      "likely_incident_type": "normal",
+      "incident_type_probabilities": {
+        "normal": 0.736,
+        "tunnel_degradation": 0.264
+      },
+      "impact_risk": {
+        "within_30_seconds": 0.108,
+        "within_60_seconds": 0.184,
+        "within_120_seconds": 0.264
+      },
+      "time_to_impact": {
+        "range": "32-1918 seconds",
+        "basis": "projected crossing of provisional packet-loss/jitter thresholds; bootstrap trend baseline"
+      },
+      "root_location_candidates": [
+        {
+          "entity_id": "interface:branch-01-edge:wan-primary",
+          "site_id": "site:branch-01",
+          "score": 0.61,
+          "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+        },
+        {
+          "entity_id": "interface:dc-01-edge:wan-primary",
+          "site_id": "site:dc-01",
+          "score": 0.36,
+          "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+        }
+      ],
+      "affected_scope": {
+        "paths": [
+          "path:branch-01-to-dc:primary"
+        ],
+        "applications": [
+          "video",
+          "file-upload",
+          "chat"
+        ],
+        "sites": [
+          "site:branch-01",
+          "site:dc-01"
+        ],
+        "backup_path_id": "path:branch-01-to-dc:backup"
+      },
+      "confidence": 0.58,
+      "risk_status": "heuristic",
+      "data_quality": "good",
+      "evidence": [
+        "packet_loss_ratio rose from a 0.00% baseline to 0.00%; slope 0.00160 per second.",
+        "jitter_ms rose from a 2.1 ms baseline to 2.7 ms; slope 0.01422 per second.",
+        "Topology lab-v1 maps tunnel:branch-01-to-dc-primary to path:branch-01-to-dc:primary.",
+        "Configured fallback path: path:branch-01-to-dc:backup."
+      ]
+    },
+    "location": {
+      "entity_id": "interface:branch-01-edge:wan-primary",
+      "site_id": "site:branch-01",
+      "score": 0.61,
+      "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+    },
+    "data_quality": "good",
+    "evidence_ids": [
+      "incident:inc-branch-01-primary",
+      "storage:telemetry",
+      "storage:app-probes"
+    ],
+    "playbook_status": "available_pending_review"
+  },
+  "feature_window": {
+    "feature_version": "window-features-v0",
+    "entity_id": "tunnel:branch-01-to-dc-primary",
+    "window_start": "2026-09-14T16:22:09.868687Z",
+    "window_end": "2026-09-14T16:23:09.868687Z",
+    "data_quality": {
+      "status": "good",
+      "reasons": [],
+      "sample_counts": {
+        "jitter_ms": 11,
+        "packet_loss_ratio": 11
+      },
+      "newest_observation_at": "2026-09-14T16:23:09.868687Z"
+    },
+    "metrics": {
+      "packet_loss_ratio": {
+        "metric": "packet_loss_ratio",
+        "unit": "ratio",
+        "sample_count": 11,
+        "latest": 0.0,
+        "mean": 0.0303030303030303,
+        "p95": 0.16666666666666666,
+        "stddev": 0.09582659576267817,
+        "slope_per_second": 0.0016025441061705281,
+        "ewma": 0.048999999999999995,
+        "baseline_median": 0.0,
+        "robust_z": 0.0
+      },
+      "jitter_ms": {
+        "metric": "jitter_ms",
+        "unit": "ms",
+        "sample_count": 11,
+        "latest": 2.733,
+        "mean": 2.693909090909091,
+        "p95": 4.3575,
+        "stddev": 1.4223458507016726,
+        "slope_per_second": 0.014218745137692926,
+        "ewma": 2.9052821796941,
+        "baseline_median": 2.058,
+        "robust_z": 0.4243068617397036
+      }
+    }
+  },
+  "run_manifest": {
+    "run_id": "live",
+    "fixture_only": false
+  },
+  "playbook": {
+    "id": "backup-path-shift-v1",
+    "title": "Primary-path degradation and controlled backup-path shift",
+    "status": "available_pending_review",
+    "source": "docs/runbooks/backup-path-shift.md",
+    "applicable_incident_types": [
+      "tunnel_degradation"
+    ],
+    "requires_operator_approval": true,
+    "action_adapter": "prahari-lab-action-agent-v1",
+    "safety_note": "Containerlab only. The fixed adapter requires a fresh incident review, successful dry-run, explicit approval, post-change reachability validation, and supports rollback; it is not approved for production devices."
+  },
+  "app_impact_started": false,
+  "audit_trail": [],
+  "fixture_only": false,
+  "workflow": {
+    "unconfirmed_action": false,
+    "reviewed_by": null,
+    "reviewed_prediction_id": null,
+    "closure_case_id": null,
+    "closure": null,
+    "closure_review": null,
+    "closure_prediction_id": null
+  }
+}

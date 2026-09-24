@@ -1,0 +1,10 @@
+{
+  "id": "backup-path-shift-v1",
+  "title": "Primary-path degradation and controlled backup-path shift",
+  "status": "available_pending_review",
+  "source": "docs/runbooks/backup-path-shift.md",
+  "applicable_incident_types": ["tunnel_degradation"],
+  "requires_operator_approval": true,
+  "action_adapter": "prahari-lab-action-agent-v1",
+  "safety_note": "Containerlab only. The fixed adapter requires a fresh incident review, successful dry-run, explicit approval, post-change reachability validation, and supports rollback; it is not approved for production devices."
+}

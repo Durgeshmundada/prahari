@@ -1,0 +1,11 @@
+[Unit]
+Description=Collect PRAHARI router telemetry every five seconds
+
+[Timer]
+OnBootSec=45
+OnUnitActiveSec=5
+AccuracySec=1
+Unit=prahari-router-collector.service
+
+[Install]
+WantedBy=timers.target

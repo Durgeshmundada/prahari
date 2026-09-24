@@ -1,0 +1,25 @@
+[Unit]
+Description=Build an unapproved PRAHARI candidate from the completed owned-server cohort
+After=docker.service prahari-owned-model-campaign.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 __BUILDER__ --state-dir __STATE_DIR__ --campaign-summary __CAMPAIGN_SUMMARY__ --wait-seconds 57600
+Restart=no
+TimeoutStopSec=45s
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=__STATE_DIR__
+ReadOnlyPaths=__BUILDER_RELEASE__
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

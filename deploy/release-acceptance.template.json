@@ -1,0 +1,73 @@
+{
+  "schema_version": "release-acceptance-v1",
+  "deployment_mode": "monitoring_only",
+  "release_sha256": null,
+  "customer_requirement_references": [],
+  "prepared_by": null,
+  "approved_by": null,
+  "approval_reference": null,
+  "approved_at": null,
+  "expires_at": null,
+  "requirements": [
+    {
+      "requirement_id": "backup_restore",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "browser_accessibility",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "capacity_failure",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "credential_rotation",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "independent_security_review",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "model_validation",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "network_collection",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "network_isolation",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "operating_ownership",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    },
+    {
+      "requirement_id": "vulnerability_scan",
+      "status": "pending",
+      "note": "Replace with the actual test result and independently retained evidence.",
+      "evidence": []
+    }
+  ]
+}

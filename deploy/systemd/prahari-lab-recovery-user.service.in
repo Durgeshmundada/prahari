@@ -1,0 +1,8 @@
+[Unit]
+Description=Check and restore the PRAHARI Containerlab topology
+
+[Service]
+Type=oneshot
+WorkingDirectory=@PROJECT_ROOT@
+ExecStart=/usr/bin/bash @PROJECT_ROOT@/network-lab/scripts/recover-lab.sh --confirm RECOVER-PRAHARI-LAB
+TimeoutStartSec=180

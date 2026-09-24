@@ -1,0 +1,206 @@
+{
+  "schema_version": "prahari-zero-egress-policy-v1",
+  "policy_id": "prahari-lab-zero-egress",
+  "policy_version": "1.0.0",
+  "description": "Fail-closed runtime egress policy for the dedicated PRAHARI WSL2 Containerlab host.",
+  "boundary": {
+    "docker_network": {
+      "name": "prahari_mgmt",
+      "driver": "bridge",
+      "ipv4_subnet": "172.31.255.0/24",
+      "gateway": "172.31.255.1",
+      "internal": false,
+      "attachable": false,
+      "ipv6_enabled": false,
+      "options": {
+        "com.docker.network.bridge.name": "prahari-mgmt",
+        "com.docker.network.bridge.enable_ip_masquerade": "false",
+        "com.docker.network.bridge.gateway_mode_ipv4": "nat-unprotected",
+        "com.docker.network.bridge.gateway_mode_ipv6": "nat-unprotected",
+        "com.docker.network.driver.mtu": "0"
+      },
+      "labels": {
+        "containerlab": ""
+      }
+    },
+    "non_egress_lab_cidrs": [
+      "10.10.0.0/30",
+      "10.10.1.0/30",
+      "10.10.2.0/30",
+      "10.10.3.0/30",
+      "10.20.0.0/30",
+      "10.20.1.0/30",
+      "172.16.10.0/24",
+      "172.16.20.0/24"
+    ]
+  },
+  "containers": [
+    {
+      "name": "clab-prahari-branch-client",
+      "ipv4": "172.31.255.10",
+      "image": "prahari-lab-app@sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e",
+      "image_id": "sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.10/24"], "eth1": ["172.16.10.2/24"]},
+      "default_ipv4_gateway": "172.16.10.1"
+    },
+    {
+      "name": "clab-prahari-branch-edge",
+      "ipv4": "172.31.255.11",
+      "image": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.11/24"], "eth1": ["10.10.0.1/30"], "eth2": ["10.20.0.1/30"], "eth3": ["172.16.10.1/24"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    },
+    {
+      "name": "clab-prahari-pe-primary",
+      "ipv4": "172.31.255.12",
+      "image": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.12/24"], "eth1": ["10.10.0.2/30"], "eth2": ["10.10.1.1/30"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    },
+    {
+      "name": "clab-prahari-core",
+      "ipv4": "172.31.255.13",
+      "image": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.13/24"], "eth1": ["10.10.1.2/30"], "eth2": ["10.10.2.1/30"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    },
+    {
+      "name": "clab-prahari-pe-secondary",
+      "ipv4": "172.31.255.14",
+      "image": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.14/24"], "eth1": ["10.10.2.2/30"], "eth2": ["10.10.3.1/30"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    },
+    {
+      "name": "clab-prahari-pe-backup",
+      "ipv4": "172.31.255.15",
+      "image": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.15/24"], "eth1": ["10.20.0.2/30"], "eth2": ["10.20.1.1/30"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    },
+    {
+      "name": "clab-prahari-dc-edge",
+      "ipv4": "172.31.255.16",
+      "image": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.16/24"], "eth1": ["10.10.3.2/30"], "eth2": ["10.20.1.2/30"], "eth3": ["172.16.20.1/24"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    },
+    {
+      "name": "clab-prahari-app-server",
+      "ipv4": "172.31.255.17",
+      "image": "prahari-lab-app@sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e",
+      "image_id": "sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.17/24"], "eth1": ["172.16.20.2/24"]},
+      "default_ipv4_gateway": "172.16.20.1"
+    },
+    {
+      "name": "clab-prahari-noc-api",
+      "ipv4": "172.31.255.18",
+      "image": "prahari-lab-app@sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e",
+      "image_id": "sha256:66624bf03c707cbe2ae19a72aedbca3c9d5cfdf424ee6a9cc529d2378d5bfb9e",
+      "privileged": true,
+      "containerlab_label": "prahari",
+      "interfaces": {"eth0": ["172.31.255.18/24"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    },
+    {
+      "name": "prahari-ollama",
+      "ipv4": "172.31.255.19",
+      "image": "ollama/ollama@sha256:020e4134285e2ef4d8fd801234176de3b4faadc992a3eb06c8e66a2f9d4c4ba2",
+      "image_id": "sha256:020e4134285e2ef4d8fd801234176de3b4faadc992a3eb06c8e66a2f9d4c4ba2",
+      "privileged": false,
+      "containerlab_label": null,
+      "interfaces": {"eth0": ["172.31.255.19/24"]},
+      "default_ipv4_gateway": "172.31.255.1"
+    }
+  ],
+  "allowed_new_tcp_flows": [
+    {
+      "source": "clab-prahari-branch-client",
+      "destination": "clab-prahari-noc-api",
+      "port": 8080,
+      "purpose": "path and application telemetry ingestion"
+    },
+    {
+      "source": "clab-prahari-noc-api",
+      "destination": "prahari-ollama",
+      "port": 11434,
+      "purpose": "local schema-constrained inference"
+    }
+  ],
+  "allowed_new_host_tcp_flows": [
+    {
+      "source": "clab-prahari-noc-api",
+      "destination": "172.31.255.1",
+      "port": 8091,
+      "purpose": "allow-listed host action agent"
+    }
+  ],
+  "forbidden_proxy_environment_variables": [
+    "ALL_PROXY",
+    "FTP_PROXY",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "all_proxy",
+    "ftp_proxy",
+    "http_proxy",
+    "https_proxy"
+  ],
+  "enforcement": {
+    "nft_family": "inet",
+    "nft_table": "prahari_zero_egress",
+    "forward_priority": -10,
+    "input_priority": -10,
+    "blocked_probes": [
+      {
+        "container": "clab-prahari-noc-api",
+        "destination": "192.0.2.1",
+        "port": 443,
+        "timeout_seconds": 1.0,
+        "family": "ipv4"
+      },
+      {
+        "container": "clab-prahari-noc-api",
+        "destination": "2001:db8::1",
+        "port": 443,
+        "timeout_seconds": 1.0,
+        "family": "ipv6"
+      },
+      {
+        "container": "clab-prahari-branch-client",
+        "destination": "172.31.255.19",
+        "port": 11434,
+        "timeout_seconds": 1.0,
+        "family": "ipv4"
+      }
+    ]
+  },
+  "required_user_services": [
+    "prahari-action-agent.service",
+    "prahari-lab-recovery.service",
+    "prahari-path-collector.service",
+    "prahari-router-collector.service"
+  ]
+}

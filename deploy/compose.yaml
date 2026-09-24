@@ -1,0 +1,253 @@
+# Local, single-host deployment shape. Release images must be scanned, pinned by
+# digest, and preloaded; Compose deliberately never pulls them at runtime.
+name: prahari
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?Set POSTGRES_IMAGE in deploy/.env}
+    pull_policy: never
+    environment:
+      POSTGRES_DB: ${PRAHARI_DATABASE_NAME:?Set PRAHARI_DATABASE_NAME in deploy/.env}
+      POSTGRES_USER: ${POSTGRES_BOOTSTRAP_USER:?Set POSTGRES_BOOTSTRAP_USER in deploy/.env}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_bootstrap_password
+      POSTGRES_INITDB_ARGS: --data-checksums
+      PGDATA: /var/lib/postgresql/data/pgdata
+      PRAHARI_MIGRATOR_USER: ${PRAHARI_MIGRATOR_USER:?Set PRAHARI_MIGRATOR_USER in deploy/.env}
+      PRAHARI_MIGRATOR_PASSWORD_FILE: /run/secrets/prahari_migrator_password
+      PRAHARI_APP_USER: ${PRAHARI_APP_USER:?Set PRAHARI_APP_USER in deploy/.env}
+      PRAHARI_APP_PASSWORD_FILE: /run/secrets/prahari_app_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init/01-create-roles.sh:/docker-entrypoint-initdb.d/01-create-roles.sh:ro
+    secrets:
+      - source: postgres_bootstrap_password
+        target: postgres_bootstrap_password
+      - source: prahari_migrator_password
+        target: prahari_migrator_password
+      - source: prahari_app_password
+        target: prahari_app_password
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    stop_grace_period: 60s
+    shm_size: 256m
+    mem_limit: ${PRAHARI_POSTGRES_MEMORY_LIMIT:-1g}
+    cpus: ${PRAHARI_POSTGRES_CPU_LIMIT:-1.0}
+    pids_limit: 256
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - app_internal
+
+  migrate:
+    image: ${PRAHARI_IMAGE:?Set PRAHARI_IMAGE in deploy/.env}
+    pull_policy: never
+    command: ["/opt/venv/bin/alembic", "upgrade", "head"]
+    environment:
+      PRAHARI_DATABASE_URL_FILE: /run/secrets/prahari_migrator_database_url
+    secrets:
+      - source: prahari_migrator_database_url
+        target: prahari_migrator_database_url
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    mem_limit: ${PRAHARI_MIGRATION_MEMORY_LIMIT:-1g}
+    cpus: ${PRAHARI_MIGRATION_CPU_LIMIT:-1.0}
+    pids_limit: 128
+    networks:
+      - app_internal
+
+  grant-app-role:
+    # This short-lived job applies exact table grants after Alembic creates the
+    # schema. The API cannot start until it completes successfully.
+    image: ${POSTGRES_IMAGE:?Set POSTGRES_IMAGE in deploy/.env}
+    pull_policy: never
+    command: ["/bin/sh", "/usr/local/bin/prahari-grant-app-role.sh"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      POSTGRES_BOOTSTRAP_USER: ${POSTGRES_BOOTSTRAP_USER:?Set POSTGRES_BOOTSTRAP_USER in deploy/.env}
+      POSTGRES_BOOTSTRAP_PASSWORD_FILE: /run/secrets/postgres_bootstrap_password
+      PRAHARI_DATABASE_NAME: ${PRAHARI_DATABASE_NAME:?Set PRAHARI_DATABASE_NAME in deploy/.env}
+      PRAHARI_MIGRATOR_USER: ${PRAHARI_MIGRATOR_USER:?Set PRAHARI_MIGRATOR_USER in deploy/.env}
+      PRAHARI_APP_USER: ${PRAHARI_APP_USER:?Set PRAHARI_APP_USER in deploy/.env}
+    volumes:
+      - ./postgres/grant/02-grant-app-role.sh:/usr/local/bin/prahari-grant-app-role.sh:ro
+    secrets:
+      - source: postgres_bootstrap_password
+        target: postgres_bootstrap_password
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=16m
+    user: "postgres"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+    networks:
+      - app_internal
+
+  api:
+    image: ${PRAHARI_IMAGE:?Set PRAHARI_IMAGE in deploy/.env}
+    pull_policy: never
+    command:
+      - /opt/venv/bin/uvicorn
+      - prahari.main:app
+      - --app-dir
+      - src
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --workers
+      - "${PRAHARI_UVICORN_WORKERS:-1}"
+      - --log-level
+      - "${PRAHARI_UVICORN_LOG_LEVEL:-info}"
+      - --limit-concurrency
+      - "${PRAHARI_UVICORN_LIMIT_CONCURRENCY:-64}"
+      - --timeout-keep-alive
+      - "5"
+    environment:
+      PRAHARI_DATABASE_URL_FILE: /run/secrets/prahari_app_database_url
+      PRAHARI_ENVIRONMENT: ${PRAHARI_ENVIRONMENT:-development}
+      PRAHARI_DATA_MODE: ${PRAHARI_DATA_MODE:-replay}
+      PRAHARI_AUTH_MODE: ${PRAHARI_AUTH_MODE:-disabled}
+      PRAHARI_API_KEYS_JSON_FILE: /run/secrets/prahari_api_keys_json
+      PRAHARI_MODEL_APPROVAL_STATUS: ${PRAHARI_MODEL_APPROVAL_STATUS:-bootstrap}
+      PRAHARI_AUTO_CREATE_SCHEMA: "false"
+      PRAHARI_LOG_LEVEL: ${PRAHARI_LOG_LEVEL:-INFO}
+      PRAHARI_CORS_ORIGINS: ${PRAHARI_CORS_ORIGINS:-http://127.0.0.1:8080}
+    secrets:
+      - source: prahari_app_database_url
+        target: prahari_app_database_url
+      - source: prahari_api_keys_json
+        target: prahari_api_keys_json
+    expose:
+      - "8080"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - /opt/venv/bin/python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      grant-app-role:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    stop_grace_period: 30s
+    mem_limit: ${PRAHARI_API_MEMORY_LIMIT:-2g}
+    cpus: ${PRAHARI_API_CPU_LIMIT:-2.0}
+    pids_limit: 256
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - app_internal
+
+  dashboard:
+    image: ${PRAHARI_DASHBOARD_IMAGE:?Set PRAHARI_DASHBOARD_IMAGE in deploy/.env}
+    pull_policy: never
+    ports:
+      - "${PRAHARI_BIND_ADDRESS:-127.0.0.1}:${PRAHARI_HOST_PORT:-8080}:8080"
+    read_only: true
+    user: "101:101"
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+      - /var/cache/nginx:uid=101,gid=101,mode=0755,size=16m
+      - /var/run:uid=101,gid=101,mode=0755,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -T 3 -O /dev/null http://127.0.0.1:8080/health"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 15s
+    mem_limit: ${PRAHARI_DASHBOARD_MEMORY_LIMIT:-256m}
+    cpus: ${PRAHARI_DASHBOARD_CPU_LIMIT:-0.5}
+    pids_limit: 128
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - app_internal
+      - web_ingress
+
+networks:
+  web_ingress:
+    # Publishing from an internal-only network is ineffective on current
+    # Docker engines. Only the gateway joins this network; API/DB stay internal.
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  app_internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres_data:
+
+secrets:
+  postgres_bootstrap_password:
+    file: ${POSTGRES_BOOTSTRAP_PASSWORD_FILE:?Set POSTGRES_BOOTSTRAP_PASSWORD_FILE in deploy/.env}
+  prahari_migrator_password:
+    file: ${PRAHARI_MIGRATOR_PASSWORD_FILE:?Set PRAHARI_MIGRATOR_PASSWORD_FILE in deploy/.env}
+  prahari_app_password:
+    file: ${PRAHARI_APP_PASSWORD_FILE:?Set PRAHARI_APP_PASSWORD_FILE in deploy/.env}
+  prahari_migrator_database_url:
+    file: ${PRAHARI_MIGRATOR_DATABASE_URL_FILE:?Set PRAHARI_MIGRATOR_DATABASE_URL_FILE in deploy/.env}
+  prahari_app_database_url:
+    file: ${PRAHARI_APP_DATABASE_URL_FILE:?Set PRAHARI_APP_DATABASE_URL_FILE in deploy/.env}
+  prahari_api_keys_json:
+    file: ${PRAHARI_API_KEYS_JSON_FILE:?Set PRAHARI_API_KEYS_JSON_FILE in deploy/.env}

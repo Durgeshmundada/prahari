@@ -1,0 +1,148 @@
+# Production-only overlay. Use together with compose.yaml and a real
+# .env.production file that has passed scripts/validate-production-artifacts.py;
+# also run scripts/validate-compose.sh against the rendered Compose model.
+services:
+  postgres:
+    security_opt:
+      - no-new-privileges:true
+
+  api:
+    environment:
+      PRAHARI_ENVIRONMENT: production
+      PRAHARI_DATA_MODE: live
+      PRAHARI_NETWORK_PROFILE_PATH: /opt/prahari/config/network-profile.json
+      PRAHARI_KNOWLEDGE_ROOT: /opt/prahari/knowledge
+      PRAHARI_ACTION_ADAPTER_ENABLED: "false"
+      PRAHARI_AUTH_MODE: api_key
+      PRAHARI_BROWSER_AUTH_ENABLED: "true"
+      PRAHARI_BROWSER_ORIGIN: ${PRAHARI_BROWSER_ORIGIN:?Set the public HTTPS dashboard origin}
+      PRAHARI_BROWSER_USERS_FILE: /run/secrets/prahari_browser_users_json
+      PRAHARI_MODEL_APPROVAL_STATUS: approved
+      PRAHARI_MODEL_ARTIFACT_PATH: /opt/prahari/models/${PRAHARI_MODEL_ARTIFACT_NAME:?Set PRAHARI_MODEL_ARTIFACT_NAME}
+      PRAHARI_MODEL_MANIFEST_PATH: /opt/prahari/models/${PRAHARI_MODEL_MANIFEST_NAME:?Set PRAHARI_MODEL_MANIFEST_NAME}
+      PRAHARI_PREDICTIVE_MODEL_MANIFEST_PATH: /opt/prahari/models/${PRAHARI_PREDICTIVE_MODEL_MANIFEST_NAME:?Set PRAHARI_PREDICTIVE_MODEL_MANIFEST_NAME}
+      PRAHARI_COPILOT_ENABLED: "true"
+      PRAHARI_OLLAMA_URL: http://${PRAHARI_OLLAMA_STATIC_IP:?Set PRAHARI_OLLAMA_STATIC_IP}:11434
+      PRAHARI_OLLAMA_ALLOWED_PRIVATE_IP: ${PRAHARI_OLLAMA_STATIC_IP:?Set PRAHARI_OLLAMA_STATIC_IP}
+      PRAHARI_OLLAMA_MODEL: ${PRAHARI_OLLAMA_MODEL:?Set PRAHARI_OLLAMA_MODEL}
+      PRAHARI_AUTO_CREATE_SCHEMA: "false"
+      PRAHARI_TRAFFIC_DEMO_RUN_ENABLED: "false"
+    secrets:
+      - source: prahari_browser_users_json
+        target: prahari_browser_users_json
+    volumes:
+      - type: bind
+        source: ${PRAHARI_KNOWLEDGE_DIR:?set PRAHARI_KNOWLEDGE_DIR to approved local documents}
+        target: /opt/prahari/knowledge
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PRAHARI_NETWORK_PROFILE_FILE:?Set the reviewed network profile file}
+        target: /opt/prahari/config/network-profile.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PRAHARI_MODEL_DIR:?Set PRAHARI_MODEL_DIR}
+        target: /opt/prahari/models
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      ollama-model-check:
+        condition: service_completed_successfully
+    networks:
+      - app_internal
+      - copilot_internal
+
+  ollama:
+    image: ${PRAHARI_OLLAMA_IMAGE:?Set PRAHARI_OLLAMA_IMAGE}
+    pull_policy: never
+    command: ["serve"]
+    environment:
+      HOME: /home/ollama
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MODELS: /opt/ollama/models
+      OLLAMA_NOHISTORY: "true"
+      OLLAMA_NO_CLOUD: "true"
+      OLLAMA_NOPRUNE: "true"
+      OLLAMA_KEEP_ALIVE: ${PRAHARI_OLLAMA_KEEP_ALIVE:-5m}
+    volumes:
+      - type: bind
+        source: ${PRAHARI_OLLAMA_MODELS_DIR:?Set PRAHARI_OLLAMA_MODELS_DIR}
+        target: /opt/ollama/models
+        read_only: true
+        bind:
+          create_host_path: false
+    expose:
+      - "11434"
+    read_only: true
+    user: "10001:10001"
+    init: true
+    tmpfs:
+      - /tmp:mode=1777,size=1g
+      - /home/ollama:uid=10001,gid=10001,mode=0700,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    stop_grace_period: 60s
+    mem_limit: ${PRAHARI_OLLAMA_MEMORY_LIMIT:-4g}
+    cpus: ${PRAHARI_OLLAMA_CPU_LIMIT:-4.0}
+    pids_limit: 512
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      copilot_internal:
+        ipv4_address: ${PRAHARI_OLLAMA_STATIC_IP:?Set PRAHARI_OLLAMA_STATIC_IP}
+
+  ollama-model-check:
+    image: ${PRAHARI_OLLAMA_IMAGE:?Set PRAHARI_OLLAMA_IMAGE}
+    pull_policy: never
+    entrypoint: ["/bin/ollama"]
+    command: ["show", "${PRAHARI_OLLAMA_MODEL:?Set PRAHARI_OLLAMA_MODEL}"]
+    environment:
+      HOME: /home/ollama
+      OLLAMA_HOST: http://${PRAHARI_OLLAMA_STATIC_IP:?Set PRAHARI_OLLAMA_STATIC_IP}:11434
+      OLLAMA_NO_CLOUD: "true"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    read_only: true
+    user: "10001:10001"
+    tmpfs:
+      - /tmp:mode=1777,size=16m
+      - /home/ollama:uid=10001,gid=10001,mode=0700,size=4m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    networks:
+      - copilot_internal
+
+networks:
+  copilot_internal:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: ${PRAHARI_COPILOT_SUBNET:-172.30.250.0/24}
+
+secrets:
+  prahari_browser_users_json:
+    file: ${PRAHARI_BROWSER_USERS_JSON_FILE:?Set PRAHARI_BROWSER_USERS_JSON_FILE}

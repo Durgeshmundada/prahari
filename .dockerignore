@@ -1,0 +1,32 @@
+# Deny everything by default so secrets, local artefacts, and node modules never
+# enter the image build context. Keep this list in sync with deploy/Dockerfile.
+**
+!pyproject.toml
+!uv.lock
+!README.md
+!src/**
+!config/**
+!fixtures/**
+!alembic/**
+!alembic.ini
+!scripts/*.py
+!docs/runbooks/**
+!deploy/**
+!apps/dashboard/**
+
+# The dashboard source is needed for its image, but local dependencies, builds,
+# and environment files must never enter either image context.
+apps/dashboard/node_modules/
+apps/dashboard/dist/
+apps/dashboard/.env
+apps/dashboard/.env.*
+!apps/dashboard/.env.example
+deploy/.env
+deploy/.env.*
+!deploy/.env.example
+# Deployment secret templates are not needed by either image. Exclude the whole
+# directory so an operator's local secret files cannot enter a build context.
+deploy/secrets/**
+# Offline Ollama/model imports can be hundreds of megabytes and are host-only
+# release inputs. Never allow them into either application image context.
+deploy/offline/**

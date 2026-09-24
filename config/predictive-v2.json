@@ -1,0 +1,10 @@
+{
+  "schema_version": "application-impact-policy-v2",
+  "version": "chat-file-impact-v2",
+  "sustained_seconds": 15,
+  "max_inter_sample_gap_seconds": 15,
+  "message_loss_ratio": 0.2,
+  "rtt_p95_ms": 150.0,
+  "jitter_ms": 30.0,
+  "failed_upload_is_impact": true
+}

@@ -1,0 +1,646 @@
+{
+  "health": {
+    "status": "ok",
+    "fixture_only": true,
+    "environment": "test",
+    "readiness": "replay fixture loaded"
+  },
+  "readiness": {
+    "status": "ready",
+    "fixture_only": true
+  },
+  "topology": {
+    "version": "lab-v1",
+    "inventory": {
+      "version": "lab-v1",
+      "sites": [
+        {
+          "id": "site:branch-01",
+          "name": "Branch-01",
+          "city": "Pune"
+        },
+        {
+          "id": "site:dc-01",
+          "name": "DC-01",
+          "city": "Mumbai"
+        }
+      ],
+      "devices": [
+        {
+          "id": "device:branch-01-edge",
+          "name": "Branch-01 edge",
+          "site_id": "site:branch-01",
+          "role": "branch-edge"
+        },
+        {
+          "id": "device:dc-01-edge",
+          "name": "DC-01 edge",
+          "site_id": "site:dc-01",
+          "role": "dc-edge"
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "interface:branch-01-edge:wan-primary",
+          "device_id": "device:branch-01-edge",
+          "site_id": "site:branch-01",
+          "role": "wan-primary",
+          "capacity_mbps": 100
+        },
+        {
+          "id": "interface:dc-01-edge:wan-primary",
+          "device_id": "device:dc-01-edge",
+          "site_id": "site:dc-01",
+          "role": "wan-primary",
+          "capacity_mbps": 100
+        }
+      ]
+    },
+    "paths": [
+      {
+        "id": "path:branch-01-to-dc:primary",
+        "name": "Branch-01 to DC-01 primary",
+        "path_role": "primary",
+        "site_ids": [
+          "site:branch-01",
+          "site:dc-01"
+        ],
+        "monitored_entity_ids": [
+          "tunnel:branch-01-to-dc-primary"
+        ],
+        "interface_ids": [
+          "interface:branch-01-edge:wan-primary",
+          "interface:dc-01-edge:wan-primary"
+        ],
+        "backup_path_id": "path:branch-01-to-dc:backup",
+        "applications": [
+          "video",
+          "file-upload",
+          "chat"
+        ],
+        "app_probe_entities": {
+          "video": "app:video:branch-01-to-dc",
+          "file-upload": "app:file-upload:branch-01-to-dc",
+          "chat": "app:chat:branch-01-to-dc"
+        }
+      },
+      {
+        "id": "path:branch-01-to-dc:backup",
+        "name": "Branch-01 to DC-01 backup",
+        "path_role": "backup",
+        "site_ids": [
+          "site:branch-01",
+          "site:dc-01"
+        ],
+        "monitored_entity_ids": [
+          "tunnel:branch-01-to-dc-backup"
+        ],
+        "interface_ids": [],
+        "backup_path_id": null,
+        "applications": [
+          "video",
+          "file-upload",
+          "chat"
+        ],
+        "app_probe_entities": {
+          "video": "app:video:branch-01-to-dc",
+          "file-upload": "app:file-upload:branch-01-to-dc",
+          "chat": "app:chat:branch-01-to-dc"
+        }
+      }
+    ],
+    "fixture_only": true,
+    "profile_id": null,
+    "profile_sha256": null
+  },
+  "actions": {
+    "operations": [],
+    "dispatch_enabled": false
+  },
+  "incidents": [
+    {
+      "id": "inc-branch-01-primary",
+      "state": "predicted",
+      "severity": "high",
+      "summary": "Branch-01 to DC-01 primary: heuristic impact score is 84% within 120 seconds.",
+      "prediction": {
+        "prediction_id": "pred-6fe825895162300a3bc0ac6c90721eba0e59462fe0dc9a49238a8470ea08f396",
+        "model_version": "trend-baseline-v0",
+        "network_profile_sha256": null,
+        "model_bundle_sha256": null,
+        "entity_id": "tunnel:branch-01-to-dc-primary",
+        "likely_incident_type": "tunnel_degradation",
+        "incident_type_probabilities": {
+          "normal": 0.163,
+          "tunnel_degradation": 0.837
+        },
+        "impact_risk": {
+          "within_30_seconds": 0.449,
+          "within_60_seconds": 0.674,
+          "within_120_seconds": 0.837
+        },
+        "time_to_impact": {
+          "range": "32-68 seconds",
+          "basis": "projected crossing of provisional packet-loss/jitter thresholds; bootstrap trend baseline"
+        },
+        "root_location_candidates": [
+          {
+            "entity_id": "interface:branch-01-edge:wan-primary",
+            "site_id": "site:branch-01",
+            "score": 0.83,
+            "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+          },
+          {
+            "entity_id": "interface:dc-01-edge:wan-primary",
+            "site_id": "site:dc-01",
+            "score": 0.58,
+            "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+          }
+        ],
+        "affected_scope": {
+          "paths": [
+            "path:branch-01-to-dc:primary"
+          ],
+          "applications": [
+            "video",
+            "file-upload",
+            "chat"
+          ],
+          "sites": [
+            "site:branch-01",
+            "site:dc-01"
+          ],
+          "backup_path_id": "path:branch-01-to-dc:backup"
+        },
+        "confidence": 0.88,
+        "risk_status": "heuristic",
+        "data_quality": "good",
+        "evidence": [
+          "jitter_ms rose from a 5.5 ms baseline to 20.0 ms; slope 0.31434 per second.",
+          "packet_loss_ratio rose from a 0.35% baseline to 2.40%; slope 0.00039 per second.",
+          "Topology lab-v1 maps tunnel:branch-01-to-dc-primary to path:branch-01-to-dc:primary.",
+          "Configured fallback path: path:branch-01-to-dc:backup."
+        ]
+      },
+      "location": {
+        "entity_id": "interface:branch-01-edge:wan-primary",
+        "site_id": "site:branch-01",
+        "score": 0.83,
+        "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+      },
+      "data_quality": "good",
+      "evidence_ids": [
+        "run:replay-gradual-loss-001",
+        "fixture:gradual-loss/metrics.jsonl",
+        "fixture:gradual-loss/app-probes.jsonl"
+      ],
+      "playbook_status": "available_pending_review"
+    }
+  ],
+  "detail": {
+    "incident": {
+      "id": "inc-branch-01-primary",
+      "state": "predicted",
+      "severity": "high",
+      "summary": "Branch-01 to DC-01 primary: heuristic impact score is 84% within 120 seconds.",
+      "prediction": {
+        "prediction_id": "pred-6fe825895162300a3bc0ac6c90721eba0e59462fe0dc9a49238a8470ea08f396",
+        "model_version": "trend-baseline-v0",
+        "network_profile_sha256": null,
+        "model_bundle_sha256": null,
+        "entity_id": "tunnel:branch-01-to-dc-primary",
+        "likely_incident_type": "tunnel_degradation",
+        "incident_type_probabilities": {
+          "normal": 0.163,
+          "tunnel_degradation": 0.837
+        },
+        "impact_risk": {
+          "within_30_seconds": 0.449,
+          "within_60_seconds": 0.674,
+          "within_120_seconds": 0.837
+        },
+        "time_to_impact": {
+          "range": "32-68 seconds",
+          "basis": "projected crossing of provisional packet-loss/jitter thresholds; bootstrap trend baseline"
+        },
+        "root_location_candidates": [
+          {
+            "entity_id": "interface:branch-01-edge:wan-primary",
+            "site_id": "site:branch-01",
+            "score": 0.83,
+            "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+          },
+          {
+            "entity_id": "interface:dc-01-edge:wan-primary",
+            "site_id": "site:dc-01",
+            "score": 0.58,
+            "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+          }
+        ],
+        "affected_scope": {
+          "paths": [
+            "path:branch-01-to-dc:primary"
+          ],
+          "applications": [
+            "video",
+            "file-upload",
+            "chat"
+          ],
+          "sites": [
+            "site:branch-01",
+            "site:dc-01"
+          ],
+          "backup_path_id": "path:branch-01-to-dc:backup"
+        },
+        "confidence": 0.88,
+        "risk_status": "heuristic",
+        "data_quality": "good",
+        "evidence": [
+          "jitter_ms rose from a 5.5 ms baseline to 20.0 ms; slope 0.31434 per second.",
+          "packet_loss_ratio rose from a 0.35% baseline to 2.40%; slope 0.00039 per second.",
+          "Topology lab-v1 maps tunnel:branch-01-to-dc-primary to path:branch-01-to-dc:primary.",
+          "Configured fallback path: path:branch-01-to-dc:backup."
+        ]
+      },
+      "location": {
+        "entity_id": "interface:branch-01-edge:wan-primary",
+        "site_id": "site:branch-01",
+        "score": 0.83,
+        "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+      },
+      "data_quality": "good",
+      "evidence_ids": [
+        "run:replay-gradual-loss-001",
+        "fixture:gradual-loss/metrics.jsonl",
+        "fixture:gradual-loss/app-probes.jsonl"
+      ],
+      "playbook_status": "available_pending_review"
+    },
+    "feature_window": {
+      "feature_version": "window-features-v0",
+      "entity_id": "tunnel:branch-01-to-dc-primary",
+      "window_start": "2026-08-20T08:59:55Z",
+      "window_end": "2026-08-20T09:00:55Z",
+      "data_quality": {
+        "status": "good",
+        "reasons": [],
+        "sample_counts": {
+          "jitter_ms": 12,
+          "packet_loss_ratio": 12
+        },
+        "newest_observation_at": "2026-08-20T09:00:55Z"
+      },
+      "metrics": {
+        "jitter_ms": {
+          "metric": "jitter_ms",
+          "unit": "ms",
+          "sample_count": 12,
+          "latest": 20.0,
+          "mean": 10.875,
+          "p95": 19.174999999999997,
+          "stddev": 5.489099045684394,
+          "slope_per_second": 0.31433566433566434,
+          "ewma": 16.202994531834996,
+          "baseline_median": 5.5,
+          "robust_z": 7.824092809928505
+        },
+        "packet_loss_ratio": {
+          "metric": "packet_loss_ratio",
+          "unit": "ratio",
+          "sample_count": 12,
+          "latest": 0.024,
+          "mean": 0.009541666666666667,
+          "p95": 0.021799999999999996,
+          "stddev": 0.00698348746846604,
+          "slope_per_second": 0.0003870629370629371,
+          "ewma": 0.016768558036834996,
+          "baseline_median": 0.0035,
+          "robust_z": 11.061648455416162
+        }
+      }
+    },
+    "device_dispatch_enabled": false,
+    "run_manifest": {
+      "run_id": "replay-gradual-loss-001",
+      "scenario": "gradual_packet_loss",
+      "fixture_only": true,
+      "random_seed": 8241,
+      "topology_version": "lab-v1",
+      "config_version": "lab-config-v1",
+      "target_entity_id": "interface:branch-01-edge:wan-primary",
+      "monitored_entity_id": "tunnel:branch-01-to-dc-primary",
+      "start_time": "2026-08-20T09:00:00Z",
+      "expected_incident_type": "tunnel_degradation",
+      "note": "This is replay data for implementation and test bootstrap, not a measured lab run."
+    },
+    "playbook": {
+      "id": "backup-path-shift-v1",
+      "title": "Primary-path degradation and controlled backup-path shift",
+      "status": "available_pending_review",
+      "source": "docs/runbooks/backup-path-shift.md",
+      "applicable_incident_types": [
+        "tunnel_degradation"
+      ],
+      "requires_operator_approval": true,
+      "action_adapter": "prahari-lab-action-agent-v1",
+      "safety_note": "Containerlab only. The fixed adapter requires a fresh incident review, successful dry-run, explicit approval, post-change reachability validation, and supports rollback; it is not approved for production devices."
+    },
+    "app_impact_started": false,
+    "audit_trail": [],
+    "fixture_only": true,
+    "workflow": {
+      "unconfirmed_action": false,
+      "reviewed_by": null,
+      "reviewed_prediction_id": null,
+      "closure_case_id": null,
+      "closure": null,
+      "closure_review": null,
+      "closure_prediction_id": null
+    }
+  },
+  "models": {
+    "model_version": "trend-baseline-v0",
+    "model_type": "deterministic trend baseline",
+    "training_status": "heuristic baseline only",
+    "feature_version": "window-features-v0",
+    "scenario_version": "mvp-gradual-loss-v0",
+    "impact_policy_version": "provisional-v0",
+    "fixture_only": true,
+    "data_mode": "replay"
+  },
+  "metrics": [
+    {
+      "schema_version": "1.0",
+      "record_type": "metric",
+      "observed_at": "2026-08-20T09:00:55Z",
+      "source": "replay",
+      "entity_id": "tunnel:branch-01-to-dc-primary",
+      "entity_type": "tunnel",
+      "metric": "packet_loss_ratio",
+      "value": 0.024,
+      "unit": "ratio",
+      "labels": {
+        "site_id": "site:branch-01",
+        "path_id": "path:branch-01-to-dc:primary",
+        "traffic_class": "video"
+      },
+      "topology_version": "lab-v1",
+      "config_version": "lab-config-v1",
+      "quality": {
+        "source_healthy": true,
+        "late_by_ms": 0,
+        "is_estimated": false,
+        "counter_reset": false
+      }
+    },
+    {
+      "schema_version": "1.0",
+      "record_type": "metric",
+      "observed_at": "2026-08-20T09:00:55Z",
+      "source": "replay",
+      "entity_id": "tunnel:branch-01-to-dc-primary",
+      "entity_type": "tunnel",
+      "metric": "jitter_ms",
+      "value": 20.0,
+      "unit": "ms",
+      "labels": {
+        "site_id": "site:branch-01",
+        "path_id": "path:branch-01-to-dc:primary",
+        "traffic_class": "video"
+      },
+      "topology_version": "lab-v1",
+      "config_version": "lab-config-v1",
+      "quality": {
+        "source_healthy": true,
+        "late_by_ms": 0,
+        "is_estimated": false,
+        "counter_reset": false
+      }
+    }
+  ],
+  "traffic": {
+    "status": "idle",
+    "can_run": false,
+    "max_file_bytes": 5242880,
+    "updated_at": null,
+    "path_id": null,
+    "source": null,
+    "destination": null,
+    "transport": null,
+    "payload": null,
+    "latency_ms": null,
+    "throughput_mbps": null,
+    "loss_percent": null,
+    "trace": [],
+    "message": "No application transfer result has been received for this path."
+  },
+  "brief": {
+    "schema_version": "1.0",
+    "incident_id": "inc-branch-01-primary",
+    "summary": "Model trend-baseline-v0 reports tunnel_degradation for tunnel:branch-01-to-dc-primary with confidence 0.880.",
+    "situation": [
+      "Incident state is predicted; severity is high.",
+      "Incident data quality is good; prediction data quality is good.",
+      "The heuristic risk scores are 0.449, 0.674 and 0.837 for 30, 60 and 120 seconds respectively."
+    ],
+    "root_cause_hypothesis": "The model classification is a hypothesis. These observations do not establish a confirmed root cause.",
+    "impact": "The model's affected application scope is video, file-upload, chat. This scope does not establish an observed application outage or recovery.",
+    "recommended_playbook_id": null,
+    "citations": [
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "Model trend-baseline-v0 reports tunnel_degradation for tunnel:branch-01-to-dc-primary with confidence 0.880."
+      },
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "The model classification is a hypothesis. These observations do not establish a confirmed root cause."
+      },
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "The model's affected application scope is video, file-upload, chat. This scope does not establish an observed application outage or recovery."
+      },
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "This brief is advisory; it does not authorize a device command or replace operator review and independent recovery checks."
+      },
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "Risk scores are heuristic. Heuristic scores are not calibrated forecasting probabilities."
+      },
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "Incident state is predicted; severity is high."
+      },
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "Incident data quality is good; prediction data quality is good."
+      },
+      {
+        "source_id": "incident:inc-branch-01-primary",
+        "claim": "The heuristic risk scores are 0.449, 0.674 and 0.837 for 30, 60 and 120 seconds respectively."
+      }
+    ],
+    "confidence": 0.88,
+    "limitations": [
+      "This brief is advisory; it does not authorize a device command or replace operator review and independent recovery checks.",
+      "Risk scores are heuristic. Heuristic scores are not calibrated forecasting probabilities."
+    ],
+    "grounding": {
+      "mode": "evidence-selection-v1",
+      "incident_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+      "incident_snapshot": {
+        "id": "inc-branch-01-primary",
+        "state": "predicted",
+        "severity": "high",
+        "summary": "Branch-01 to DC-01 primary: heuristic impact score is 84% within 120 seconds.",
+        "prediction": {
+          "prediction_id": "pred-6fe825895162300a3bc0ac6c90721eba0e59462fe0dc9a49238a8470ea08f396",
+          "model_version": "trend-baseline-v0",
+          "network_profile_sha256": null,
+          "model_bundle_sha256": null,
+          "entity_id": "tunnel:branch-01-to-dc-primary",
+          "likely_incident_type": "tunnel_degradation",
+          "incident_type_probabilities": {
+            "normal": 0.163,
+            "tunnel_degradation": 0.837
+          },
+          "impact_risk": {
+            "within_30_seconds": 0.449,
+            "within_60_seconds": 0.674,
+            "within_120_seconds": 0.837
+          },
+          "time_to_impact": {
+            "range": "32-68 seconds",
+            "basis": "projected crossing of provisional packet-loss/jitter thresholds; bootstrap trend baseline"
+          },
+          "root_location_candidates": [
+            {
+              "entity_id": "interface:branch-01-edge:wan-primary",
+              "site_id": "site:branch-01",
+              "score": 0.83,
+              "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+            },
+            {
+              "entity_id": "interface:dc-01-edge:wan-primary",
+              "site_id": "site:dc-01",
+              "score": 0.58,
+              "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+            }
+          ],
+          "affected_scope": {
+            "paths": [
+              "path:branch-01-to-dc:primary"
+            ],
+            "applications": [
+              "video",
+              "file-upload",
+              "chat"
+            ],
+            "sites": [
+              "site:branch-01",
+              "site:dc-01"
+            ],
+            "backup_path_id": "path:branch-01-to-dc:backup"
+          },
+          "confidence": 0.88,
+          "risk_status": "heuristic",
+          "data_quality": "good",
+          "evidence": [
+            "jitter_ms rose from a 5.5 ms baseline to 20.0 ms; slope 0.31434 per second.",
+            "packet_loss_ratio rose from a 0.35% baseline to 2.40%; slope 0.00039 per second.",
+            "Topology lab-v1 maps tunnel:branch-01-to-dc-primary to path:branch-01-to-dc:primary.",
+            "Configured fallback path: path:branch-01-to-dc:backup."
+          ]
+        },
+        "location": {
+          "entity_id": "interface:branch-01-edge:wan-primary",
+          "site_id": "site:branch-01",
+          "score": 0.83,
+          "rationale": "Primary-path endpoint ranked by direct topology relation to the degraded monitored tunnel."
+        },
+        "data_quality": "good",
+        "evidence_ids": [
+          "run:replay-gradual-loss-001",
+          "fixture:gradual-loss/metrics.jsonl",
+          "fixture:gradual-loss/app-probes.jsonl"
+        ],
+        "playbook_status": "available_pending_review"
+      },
+      "claims": [
+        {
+          "claim_id": "claim-4151ae7cfc5b2b941e3bededaf8666b3b639326d00853adb84f6ee2dac2f6568",
+          "field": "summary",
+          "text": "Model trend-baseline-v0 reports tunnel_degradation for tunnel:branch-01-to-dc-primary with confidence 0.880.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "prediction",
+          "kind": "current"
+        },
+        {
+          "claim_id": "claim-b70141174dc7aa4ea95527bb67db907b9324e03b18447ae380a8f6aed7508130",
+          "field": "root_cause_hypothesis",
+          "text": "The model classification is a hypothesis. These observations do not establish a confirmed root cause.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "prediction.likely_incident_type",
+          "kind": "limitation"
+        },
+        {
+          "claim_id": "claim-8510f74488279cfaa3a020334c7f60537fc8b616b0205d3d2395467f0c9feb55",
+          "field": "impact",
+          "text": "The model's affected application scope is video, file-upload, chat. This scope does not establish an observed application outage or recovery.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "prediction.affected_scope.applications",
+          "kind": "limitation"
+        },
+        {
+          "claim_id": "claim-afd5af4c4da3aaffb7a38e8e6c3cbd8d8d7d9ce121bb95d661b06c256cdbc8f3",
+          "field": "limitations",
+          "text": "This brief is advisory; it does not authorize a device command or replace operator review and independent recovery checks.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "playbook_status",
+          "kind": "limitation"
+        },
+        {
+          "claim_id": "claim-dfb69a2bc26fc49e66164231e2577e020b25109bb8cb2bee91a065ce426dbdf6",
+          "field": "limitations",
+          "text": "Risk scores are heuristic. Heuristic scores are not calibrated forecasting probabilities.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "prediction.risk_status",
+          "kind": "limitation"
+        },
+        {
+          "claim_id": "claim-b23249a5cfafa4608024db2ab2e85f51a0878ec6c2de25d6b5af4d054a5c4863",
+          "field": "situation",
+          "text": "Incident state is predicted; severity is high.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "state,severity",
+          "kind": "current"
+        },
+        {
+          "claim_id": "claim-5f5ca17353b09bcafdac6f5e5d2913e13e04d3d391db7d29bf28f7a4a3505b39",
+          "field": "situation",
+          "text": "Incident data quality is good; prediction data quality is good.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "data_quality",
+          "kind": "current"
+        },
+        {
+          "claim_id": "claim-8378a922b57917554b84d2272e0d28c13383b63720f00e16dbe44af149fd9907",
+          "field": "situation",
+          "text": "The heuristic risk scores are 0.449, 0.674 and 0.837 for 30, 60 and 120 seconds respectively.",
+          "source_id": "incident:inc-branch-01-primary",
+          "source_sha256": "b3531b6218870ecaa6421bb5fd8679991e96ebce1a596c3a5bda4e913c517e6a",
+          "support_path": "prediction.impact_risk,prediction.risk_status",
+          "kind": "current"
+        }
+      ]
+    },
+    "evidence_current_at_completion": false
+  }
+}

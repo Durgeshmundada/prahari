@@ -1,0 +1,95 @@
+rule_files:
+  - prahari.rules.yaml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="prahari-api",instance="test-api"}'
+        values: '0x3'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: PrahariApiUnreachable
+        exp_alerts:
+          - exp_labels: {job: prahari-api, instance: test-api, severity: critical}
+            exp_annotations:
+              summary: PRAHARI API cannot be scraped
+              description: Check API liveness, monitoring credentials and network reachability.
+  - interval: 1m
+    input_series:
+      - series: 'prahari_database_available{job="prahari-api",instance="test-api"}'
+        values: '0x3'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: PrahariStorageUnavailable
+        exp_alerts:
+          - exp_labels: {job: prahari-api, instance: test-api, severity: critical}
+            exp_annotations:
+              summary: PRAHARI durable storage is unavailable
+              description: Unconfirmed action state may be unknown. Preserve evidence and investigate storage.
+  - interval: 1m
+    input_series:
+      - series: 'prahari_prediction_ready{job="prahari-api",instance="test-api"}'
+        values: '0x3'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: PrahariPredictionWithheld
+        exp_alerts:
+          - exp_labels: {job: prahari-api, instance: test-api, severity: warning}
+            exp_annotations:
+              summary: PRAHARI prediction evidence is unavailable
+              description: Investigate collectors, freshness, model applicability and data quality.
+  - interval: 1m
+    input_series:
+      - series: 'prahari_unconfirmed_actions{job="prahari-api",instance="test-api"}'
+        values: '1x3'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: PrahariUnconfirmedAction
+        exp_alerts:
+          - exp_labels: {job: prahari-api, instance: test-api, severity: critical}
+            exp_annotations:
+              summary: PRAHARI has an unconfirmed device operation
+              description: Do not retry. Quiesce dispatch and follow independent route reconciliation.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="prahari-api",instance="test-api"}'
+        values: '1x10'
+      - series: 'prahari_database_available{job="prahari-api",instance="test-api"}'
+        values: '1x10'
+      - series: 'prahari_prediction_ready{job="prahari-api",instance="test-api"}'
+        values: '1x10'
+      - series: 'prahari_unconfirmed_actions{job="prahari-api",instance="test-api"}'
+        values: '0x10'
+    alert_rule_test:
+      - {eval_time: 10m, alertname: PrahariUnconfirmedAction, exp_alerts: []}
+      - {eval_time: 10m, alertname: PrahariApiUnreachable, exp_alerts: []}
+      - {eval_time: 10m, alertname: PrahariStorageUnavailable, exp_alerts: []}
+      - {eval_time: 10m, alertname: PrahariPredictionWithheld, exp_alerts: []}
+  - interval: 1m
+    input_series:
+      - series: 'prahari_http_requests_total{job="prahari-api",instance="test-api",method="GET",path="/api/incidents",status="200"}'
+        values: '0+100x10'
+      - series: 'prahari_http_requests_total{job="prahari-api",instance="test-api",method="GET",path="/api/incidents",status="503"}'
+        values: '0+10x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: PrahariApiErrors
+        exp_alerts:
+          - exp_labels: {job: prahari-api, instance: test-api, severity: warning}
+            exp_annotations:
+              summary: PRAHARI API failures exceed the example error budget
+              description: Inspect bounded request outcomes and readiness. Review this threshold for the deployment.
+  - interval: 1m
+    input_series:
+      - series: 'prahari_copilot_briefs_total{job="prahari-api",instance="test-api",outcome="unavailable"}'
+        values: '0+1x10'
+      - series: 'prahari_copilot_briefs_total{job="prahari-api",instance="test-api",outcome="verified"}'
+        values: '0x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: PrahariCopilotUnavailable
+        exp_alerts:
+          - exp_labels: {job: prahari-api, instance: test-api, severity: warning}
+            exp_annotations:
+              summary: PRAHARI local copilot is unavailable for repeated requests
+              description: Check the local runtime and evidence-selection validation; predictor evidence remains authoritative.

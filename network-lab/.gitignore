@@ -1,0 +1,16 @@
+# Generated Containerlab state and per-run fault records are intentionally local.
+clab-*/
+state/faults/*.json
+!state/faults/.gitkeep
+state/collector/*
+!state/collector/.gitkeep
+state/experiments/*
+!state/experiments/.gitkeep
+state/secrets/*
+!state/secrets/.gitkeep
+state/router-collector/*
+!state/router-collector/.gitkeep
+state/host/*
+!state/host/.gitkeep
+state/noc-api/*
+!state/noc-api/.gitkeep

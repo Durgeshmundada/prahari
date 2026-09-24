@@ -1,0 +1,13 @@
+{
+  "run_id": "replay-gradual-loss-001",
+  "scenario": "gradual_packet_loss",
+  "fixture_only": true,
+  "random_seed": 8241,
+  "topology_version": "lab-v1",
+  "config_version": "lab-config-v1",
+  "target_entity_id": "interface:branch-01-edge:wan-primary",
+  "monitored_entity_id": "tunnel:branch-01-to-dc-primary",
+  "start_time": "2026-08-20T09:00:00Z",
+  "expected_incident_type": "tunnel_degradation",
+  "note": "This is replay data for implementation and test bootstrap, not a measured lab run."
+}

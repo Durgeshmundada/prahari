@@ -1,0 +1,11 @@
+[Unit]
+Description=Collect PRAHARI path telemetry continuously
+
+[Timer]
+OnBootSec=50
+OnUnitInactiveSec=1
+AccuracySec=1
+Unit=prahari-path-collector.service
+
+[Install]
+WantedBy=timers.target

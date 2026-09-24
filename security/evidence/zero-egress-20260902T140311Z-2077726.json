@@ -1,0 +1,352 @@
+{
+  "attestation_id": "zero-egress-20260902T140311Z-2077726",
+  "checks": [
+    {
+      "detail": "policy schema and allowlists are valid",
+      "id": "policy_valid",
+      "status": "pass"
+    },
+    {
+      "detail": "Docker management network matches policy",
+      "evidence": {
+        "actual": {
+          "attachable": false,
+          "driver": "bridge",
+          "internal": false,
+          "ipam": [
+            {
+              "Gateway": "172.31.255.1",
+              "Subnet": "172.31.255.0/24"
+            }
+          ],
+          "ipv6_enabled": false,
+          "labels": {
+            "containerlab": ""
+          },
+          "name": "prahari_mgmt",
+          "options": {
+            "com.docker.network.bridge.enable_ip_masquerade": "false",
+            "com.docker.network.bridge.gateway_mode_ipv4": "nat-unprotected",
+            "com.docker.network.bridge.gateway_mode_ipv6": "nat-unprotected",
+            "com.docker.network.driver.mtu": "0"
+          }
+        },
+        "expected": {
+          "attachable": false,
+          "driver": "bridge",
+          "internal": false,
+          "ipam": [
+            {
+              "Gateway": "172.31.255.1",
+              "Subnet": "172.31.255.0/24"
+            }
+          ],
+          "ipv6_enabled": false,
+          "labels": {
+            "containerlab": ""
+          },
+          "name": "prahari_mgmt",
+          "options": {
+            "com.docker.network.bridge.enable_ip_masquerade": "false",
+            "com.docker.network.bridge.gateway_mode_ipv4": "nat-unprotected",
+            "com.docker.network.bridge.gateway_mode_ipv6": "nat-unprotected",
+            "com.docker.network.driver.mtu": "0"
+          }
+        }
+      },
+      "id": "docker_network_exact",
+      "status": "pass"
+    },
+    {
+      "detail": "resolved management bridge br-7771e372544b",
+      "evidence": {
+        "bridge": "br-7771e372544b"
+      },
+      "id": "docker_bridge_present",
+      "status": "pass"
+    },
+    {
+      "detail": "runtime identities, addresses, images, privileges, labels, and proxies match",
+      "evidence": {
+        "connected_names": [
+          "clab-prahari-app-server",
+          "clab-prahari-branch-client",
+          "clab-prahari-branch-edge",
+          "clab-prahari-core",
+          "clab-prahari-dc-edge",
+          "clab-prahari-noc-api",
+          "clab-prahari-pe-backup",
+          "clab-prahari-pe-primary",
+          "clab-prahari-pe-secondary",
+          "prahari-ollama"
+        ],
+        "expected_names": [
+          "clab-prahari-app-server",
+          "clab-prahari-branch-client",
+          "clab-prahari-branch-edge",
+          "clab-prahari-core",
+          "clab-prahari-dc-edge",
+          "clab-prahari-noc-api",
+          "clab-prahari-pe-backup",
+          "clab-prahari-pe-primary",
+          "clab-prahari-pe-secondary",
+          "prahari-ollama"
+        ]
+      },
+      "id": "container_inventory_exact",
+      "status": "pass"
+    },
+    {
+      "detail": "bridged Docker packets enter the host filtering hooks",
+      "evidence": {
+        "observed": "1"
+      },
+      "id": "bridge_netfilter_enabled",
+      "status": "pass"
+    },
+    {
+      "detail": "one or more PRAHARI user services lack the required systemd IP filter",
+      "id": "user_service_ip_firewalls",
+      "status": "fail"
+    },
+    {
+      "detail": "docker.service lacks the required local-only systemd IP filter",
+      "id": "docker_daemon_ip_firewall",
+      "status": "fail"
+    },
+    {
+      "detail": "policy compiled in an isolated network namespace",
+      "id": "nftables_syntax",
+      "status": "pass"
+    },
+    {
+      "detail": "dry-run only: no firewall or service state was changed",
+      "evidence": {
+        "required_apply_confirmation": "APPLY-PRAHARI-ZERO-EGRESS"
+      },
+      "id": "mutation",
+      "status": "pass"
+    }
+  ],
+  "command": "dry-run",
+  "evidence": {
+    "firewall": {
+      "readable": false
+    },
+    "rendered_nftables": "table inet prahari_zero_egress {\n  comment \"policy-sha256:2e16393b54a9dd5706e3729c79569dc8c9b7b333946de62f091f3e3b1af41675\"\n  chain forward {\n    type filter hook forward priority -10; policy accept;\n    iifname \"br-7771e372544b\" ip saddr 172.31.255.0/24 ip daddr 172.31.255.0/24 ct state established,related counter accept comment \"allow-established-local-forward\"\n    iifname \"br-7771e372544b\" ip saddr 172.31.255.10 ip daddr 172.31.255.18 tcp dport 8080 ct state new counter accept comment \"allow-local-tcp-1\"\n    iifname \"br-7771e372544b\" ip saddr 172.31.255.18 ip daddr 172.31.255.19 tcp dport 11434 ct state new counter accept comment \"allow-local-tcp-2\"\n    iifname \"br-7771e372544b\" counter drop comment \"deny-bridge-forward-default\"\n    ip saddr 172.31.255.0/24 counter drop comment \"deny-source-forward-fallback\"\n  }\n  chain input {\n    type filter hook input priority -10; policy accept;\n    iifname \"br-7771e372544b\" ip saddr 172.31.255.0/24 ip daddr 172.31.255.1 ct state established,related counter accept comment \"allow-established-host-input\"\n    iifname \"br-7771e372544b\" ip saddr 172.31.255.18 ip daddr 172.31.255.1 tcp dport 8091 ct state new counter accept comment \"allow-host-tcp-1\"\n    iifname \"br-7771e372544b\" counter drop comment \"deny-bridge-host-input-default\"\n    ip saddr 172.31.255.0/24 counter drop comment \"deny-source-host-input-fallback\"\n  }\n}\n",
+    "rendered_nftables_sha256": "5249d9c3387dbedaafd966b2dedf0d04dd62fadf68726c2059ab466d7d77a037",
+    "runtime": {
+      "containers": [
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:01e1ff471b77f35ebe8a2583e7dcafecd5465b3f9ed94f92c4463605cb4ad6e4",
+          "image_reference": "prahari-lab-app:0.1.0",
+          "ipv4": "172.31.255.17",
+          "matches_policy": true,
+          "name": "clab-prahari-app-server",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:01e1ff471b77f35ebe8a2583e7dcafecd5465b3f9ed94f92c4463605cb4ad6e4",
+          "image_reference": "prahari-lab-app:0.1.0",
+          "ipv4": "172.31.255.10",
+          "matches_policy": true,
+          "name": "clab-prahari-branch-client",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "image_reference": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "ipv4": "172.31.255.11",
+          "matches_policy": true,
+          "name": "clab-prahari-branch-edge",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "image_reference": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "ipv4": "172.31.255.13",
+          "matches_policy": true,
+          "name": "clab-prahari-core",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "image_reference": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "ipv4": "172.31.255.16",
+          "matches_policy": true,
+          "name": "clab-prahari-dc-edge",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:01e1ff471b77f35ebe8a2583e7dcafecd5465b3f9ed94f92c4463605cb4ad6e4",
+          "image_reference": "prahari-lab-app:0.1.0",
+          "ipv4": "172.31.255.18",
+          "matches_policy": true,
+          "name": "clab-prahari-noc-api",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "image_reference": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "ipv4": "172.31.255.15",
+          "matches_policy": true,
+          "name": "clab-prahari-pe-backup",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "image_reference": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "ipv4": "172.31.255.12",
+          "matches_policy": true,
+          "name": "clab-prahari-pe-primary",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": "prahari",
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "image_reference": "quay.io/frrouting/frr@sha256:e47e67bd612030cb1bedee2bde85b73913f2ea021573b749deb21d94940f03c1",
+          "ipv4": "172.31.255.14",
+          "matches_policy": true,
+          "name": "clab-prahari-pe-secondary",
+          "privileged": true,
+          "running": true
+        },
+        {
+          "containerlab_label": null,
+          "forbidden_proxy_variables_present": [],
+          "image_id": "sha256:020e4134285e2ef4d8fd801234176de3b4faadc992a3eb06c8e66a2f9d4c4ba2",
+          "image_reference": "ollama/ollama@sha256:020e4134285e2ef4d8fd801234176de3b4faadc992a3eb06c8e66a2f9d4c4ba2",
+          "ipv4": "172.31.255.19",
+          "matches_policy": true,
+          "name": "prahari-ollama",
+          "privileged": false,
+          "running": true
+        }
+      ],
+      "kernel": {
+        "bridge_nf_call_iptables": "1",
+        "ipv4_forward": "1",
+        "ipv6_all_forwarding": "0"
+      },
+      "network": {
+        "attachable": false,
+        "bridge": "br-7771e372544b",
+        "connected_containers": [
+          "clab-prahari-app-server",
+          "clab-prahari-branch-client",
+          "clab-prahari-branch-edge",
+          "clab-prahari-core",
+          "clab-prahari-dc-edge",
+          "clab-prahari-noc-api",
+          "clab-prahari-pe-backup",
+          "clab-prahari-pe-primary",
+          "clab-prahari-pe-secondary",
+          "prahari-ollama"
+        ],
+        "driver": "bridge",
+        "id": "7771e372544b08ea7072a4851b5135dc5a53df924950d5adb38476142ab619f4",
+        "internal": false,
+        "ipam": [
+          {
+            "Gateway": "172.31.255.1",
+            "Subnet": "172.31.255.0/24"
+          }
+        ],
+        "ipv6_enabled": false,
+        "labels": {
+          "containerlab": ""
+        },
+        "name": "prahari_mgmt",
+        "options": {
+          "com.docker.network.bridge.enable_ip_masquerade": "false",
+          "com.docker.network.bridge.gateway_mode_ipv4": "nat-unprotected",
+          "com.docker.network.bridge.gateway_mode_ipv6": "nat-unprotected",
+          "com.docker.network.driver.mtu": "0"
+        },
+        "scope": "local"
+      },
+      "systemd": {
+        "docker_service": {
+          "ActiveState": "active",
+          "DropInPaths": "",
+          "IPAddressAllow": "",
+          "IPAddressDeny": "",
+          "LoadState": "loaded"
+        },
+        "user_services": {
+          "prahari-action-agent.service": {
+            "DropInPaths": "",
+            "IPAddressAllow": "",
+            "IPAddressDeny": "",
+            "LoadState": "loaded"
+          },
+          "prahari-lab-recovery.service": {
+            "DropInPaths": "",
+            "IPAddressAllow": "",
+            "IPAddressDeny": "",
+            "LoadState": "loaded"
+          },
+          "prahari-path-collector.service": {
+            "DropInPaths": "",
+            "IPAddressAllow": "",
+            "IPAddressDeny": "",
+            "LoadState": "loaded"
+          },
+          "prahari-router-collector.service": {
+            "DropInPaths": "",
+            "IPAddressAllow": "",
+            "IPAddressDeny": "",
+            "LoadState": "loaded"
+          }
+        }
+      }
+    }
+  },
+  "limitations": [
+    "This attests the named dedicated WSL2/Containerlab boundary, not the Windows host or another Docker network.",
+    "A passing report is point-in-time evidence; run verification after every network, container, policy, kernel, or service change.",
+    "This is engineering evidence, not a third-party security certification."
+  ],
+  "observed_at": "2026-09-02T14:03:11.277086Z",
+  "policy": {
+    "id": "prahari-lab-zero-egress",
+    "path": "/mnt/d/hack2skill/security/prahari-lab-zero-egress-v1.json",
+    "sha256": "2e16393b54a9dd5706e3729c79569dc8c9b7b333946de62f091f3e3b1af41675",
+    "version": "1.0.0"
+  },
+  "report_sha256": "e7ff3cbe29f245a33efe0e1a4309676cd6280e8cb0ecd9e2467544610996e1f1",
+  "schema_version": "prahari-zero-egress-attestation-v1",
+  "status": "not_attested",
+  "tool": {
+    "effective_uid": 1000,
+    "hostname": "DurgeshMundada",
+    "path": "/mnt/d/hack2skill/security/zero_egress.py",
+    "python": "3.12.3",
+    "sha256": "7dec8b76ca02625d7b7c70b04929e64b0b7da3be85b970c02b81908a3410f966"
+  }
+}

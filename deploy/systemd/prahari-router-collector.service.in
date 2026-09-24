@@ -1,0 +1,9 @@
+[Unit]
+Description=Collect PRAHARI router telemetry
+After=prahari-lab-recovery.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@PROJECT_ROOT@
+ExecStart=/usr/bin/bash @PROJECT_ROOT@/network-lab/scripts/collect-router-telemetry.sh
+TimeoutStartSec=25

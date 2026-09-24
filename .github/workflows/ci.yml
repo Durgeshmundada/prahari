@@ -1,0 +1,145 @@
+name: verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16.9-alpine@sha256:7c688148e5e156d0e86df7ba8ae5a05a2386aaec1e2ad8e6d11bdf10504b1fb7
+        env:
+          POSTGRES_PASSWORD: ephemeral-ci-test-only
+          POSTGRES_DB: prahari_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d prahari_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --all-groups --frozen
+      - name: Verify PostgreSQL migrations and concurrent workflow persistence
+        env:
+          PRAHARI_TEST_POSTGRES_URL: postgresql+psycopg://postgres:ephemeral-ci-test-only@localhost:5432/prahari_test
+        run: uv run pytest tests/test_postgres_integration.py -q
+
+  backend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --all-groups --frozen
+      - run: uv run ruff check .
+      - run: uv run pytest -q
+      - name: Verify a clean database can be migrated
+        env:
+          PRAHARI_DATABASE_URL: sqlite:////tmp/prahari-ci.db
+        run: uv run alembic upgrade head
+      - name: Verify the migrated evidence store read-only
+        run: |
+          printf '%s' 'sqlite:////tmp/prahari-ci.db' > "$RUNNER_TEMP/prahari-ci-database-url"
+          uv run python scripts/verify_evidence_integrity.py \
+            --database-url-file "$RUNNER_TEMP/prahari-ci-database-url"
+
+  dashboard:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/dashboard/package-lock.json
+      - run: npm ci
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Generate contract fixtures from the current backend
+        working-directory: .
+        run: uv run --frozen python scripts/export_dashboard_fixtures.py
+      - run: npm test
+      - run: npm audit --audit-level=moderate
+      - run: npm run check
+      - run: npm run build
+
+  dependency-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv export --frozen --no-dev --no-emit-project --no-hashes --output-file /tmp/prahari-runtime.txt > /dev/null
+      - name: Audit locked Linux runtime dependencies and produce a CycloneDX inventory
+        run: uv tool run --from pip-audit==2.10.0 pip-audit --requirement /tmp/prahari-runtime.txt --no-deps --disable-pip --format cyclonedx-json --output python-runtime.cdx.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-runtime-dependency-audit
+          path: python-runtime.cdx.json
+
+  monitoring-rules:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify pinned promtool and test monitoring rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          monitoring_tools="$RUNNER_TEMP/prahari-monitoring-tools"
+          mkdir -p "$monitoring_tools"
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-time 120 \
+            https://github.com/prometheus/prometheus/releases/download/v3.14.0/prometheus-3.14.0.linux-amd64.tar.gz \
+            --output "$monitoring_tools/prometheus.tar.gz"
+          printf '%s  %s\n' f665c6da19eb7ba399c915d30c7d9793c9b417bf8a749b504bc470678631478d "$monitoring_tools/prometheus.tar.gz" | sha256sum --check
+          tar -xzf "$monitoring_tools/prometheus.tar.gz" --strip-components=1 -C "$monitoring_tools" prometheus-3.14.0.linux-amd64/promtool
+          bash deploy/scripts/verify-monitoring.sh "$monitoring_tools/promtool"
+
+  compose-model:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the development Linux Compose model without starting containers
+        run: bash deploy/scripts/validate-compose.sh
+      - name: Render and validate the production Linux Compose model
+        run: bash deploy/scripts/validate-compose.sh deploy/.env.production.example
+      - name: Reject production Compose security mutations
+        run: bash deploy/scripts/test-compose-mutations.sh deploy/.env.production.example
+
+  image-build:
+    runs-on: ubuntu-24.04
+    needs: [backend, postgres, dashboard, compose-model, dependency-audit, monitoring-rules]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build --file deploy/Dockerfile --tag prahari:ci .
+      - name: Verify native model dependencies and API imports in the built runtime
+        run: docker run --rm --network none --read-only --tmpfs /tmp --entrypoint /opt/venv/bin/python prahari:ci -c "import os, lightgbm, prahari.api; assert os.getuid() == 10001"
+      - name: Validate and build the shell-free API candidate
+        run: |
+          docker build --check --file deploy/api-distroless.Dockerfile .
+          docker build --file deploy/api-distroless.Dockerfile --tag prahari-api-distroless:ci .
+      - name: Verify the distroless API runtime boundary
+        run: bash deploy/scripts/verify-api-image.sh prahari-api-distroless:ci /tmp/prahari-api-distroless-runtime.json
+      - run: docker build --file deploy/dashboard.Dockerfile --tag prahari-dashboard:ci .
+      - run: docker build --file deploy/postgres.Dockerfile --tag prahari-postgres:ci .
+      - name: Verify hardened PostgreSQL initializes without root or gosu
+        run: sudo bash deploy/scripts/verify-postgres-image.sh prahari-postgres:ci
