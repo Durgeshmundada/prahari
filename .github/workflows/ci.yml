@@ -90,7 +90,7 @@ jobs:
       - run: uv export --frozen --no-dev --no-emit-project --no-hashes --output-file /tmp/prahari-runtime.txt > /dev/null
       - name: Audit locked Linux runtime dependencies and produce a CycloneDX inventory
         run: uv tool run --from pip-audit==2.10.0 pip-audit --requirement /tmp/prahari-runtime.txt --no-deps --disable-pip --format cyclonedx-json --output python-runtime.cdx.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: python-runtime-dependency-audit
