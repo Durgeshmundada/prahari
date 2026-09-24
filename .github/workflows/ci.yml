@@ -22,7 +22,7 @@ jobs:
           --health-cmd "pg_isready -U postgres -d prahari_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.13"
@@ -36,7 +36,7 @@ jobs:
   backend:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.13"
@@ -60,7 +60,7 @@ jobs:
       run:
         working-directory: apps/dashboard
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -82,7 +82,7 @@ jobs:
   dependency-audit:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.13"
@@ -99,7 +99,7 @@ jobs:
   monitoring-rules:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify pinned promtool and test monitoring rules
         shell: bash
         run: |
@@ -116,7 +116,7 @@ jobs:
   compose-model:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate the development Linux Compose model without starting containers
         run: bash deploy/scripts/validate-compose.sh
       - name: Render and validate the production Linux Compose model
@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [backend, postgres, dashboard, compose-model, dependency-audit, monitoring-rules]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - run: docker build --file deploy/Dockerfile --tag prahari:ci .
       - name: Verify native model dependencies and API imports in the built runtime
